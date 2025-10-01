@@ -4,3 +4,4 @@ package api
 // dateFmt — единый формат представления даты в проекте (YYYYMMDD).
 // Используется при парсинге/форматировании дат в API.
 const dateFmt = "20060102"
+const defaultTasksLimit = 50

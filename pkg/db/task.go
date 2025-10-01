@@ -10,11 +10,11 @@ import (
 // Task описывает одну задачу из таблицы scheduler.
 // В БД все поля (кроме id) текстовые; в коде id удобнее хранить как int64.
 type Task struct {
-	ID      int64  `json:"id" db:"id"`           // первичный ключ
-	Date    string `json:"date" db:"date"`       // дата в формате 20060102
-	Title   string `json:"title" db:"title"`     // заголовок (обязательное поле при вставке/обновлении)
-	Comment string `json:"comment" db:"comment"` // комментарий (может быть пустым)
-	Repeat  string `json:"repeat" db:"repeat"`   // правило повторения (может быть пустым)
+	ID      int64  `json:"id,string" db:"id"`
+	Date    string `json:"date" db:"date"`
+	Title   string `json:"title" db:"title"`
+	Comment string `json:"comment" db:"comment"`
+	Repeat  string `json:"repeat" db:"repeat"`
 }
 
 // AddTask вставляет новую задачу в таблицу scheduler и возвращает её идентификатор.

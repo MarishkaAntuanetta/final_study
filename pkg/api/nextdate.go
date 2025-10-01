@@ -90,7 +90,10 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 
 	next, err := NextDate(now, dateStr, repeat)
 	if err != nil {
-		fmt.Fprintln(w, "error")
+		// корректная обработка: 400 + JSON с ошибкой
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusBadRequest)
+		writeJSON(w, map[string]string{"error": err.Error()})
 		return
 	}
 	fmt.Fprintln(w, next)

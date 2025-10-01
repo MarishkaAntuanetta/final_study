@@ -9,22 +9,15 @@ import (
 	"todo/pkg/db"
 )
 
-// taskOut — форма одной задачи в ответе списка (все поля строками).
-type taskOut struct {
-	ID      string `json:"id"`
-	Date    string `json:"date"`
-	Title   string `json:"title"`
-	Comment string `json:"comment"`
-	Repeat  string `json:"repeat"`
-}
-
-// tasksResp — форма всего ответа: {"tasks":[...]}.
+// tasksResp — форма ответа: {"tasks":[...]}.
+// Элементы — напрямую db.Task (id сериализуется строкой через тег json:",string").
 type tasksResp struct {
-	Tasks []taskOut `json:"tasks"`
+	Tasks []*db.Task `json:"tasks"`
 }
 
 // tasksHandler — обрабатывает GET /api/tasks.
-// Поддерживает ограничение limit и поиск search (подстрока в title/comment или дата 02.01.2006).
+// Поддерживает ограничение limit и поиск search
+// (подстрока в title/comment или дата 02.01.2006).
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, map[string]string{"error": "method not allowed"})
@@ -32,7 +25,9 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	search := r.URL.Query().Get("search")
-	limit := 50
+
+	// дефолтный лимит берём из константы пакета
+	limit := defaultTasksLimit
 	if s := r.URL.Query().Get("limit"); s != "" {
 		if n, err := strconv.Atoi(s); err == nil && n > 0 {
 			limit = n
@@ -45,16 +40,5 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := make([]taskOut, 0, len(items))
-	for _, t := range items {
-		out = append(out, taskOut{
-			ID:      strconv.FormatInt(t.ID, 10),
-			Date:    t.Date,
-			Title:   t.Title,
-			Comment: t.Comment,
-			Repeat:  t.Repeat,
-		})
-	}
-
-	writeJSON(w, tasksResp{Tasks: out})
+	writeJSON(w, tasksResp{Tasks: items})
 }
