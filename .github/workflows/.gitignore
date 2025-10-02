@@ -1,0 +1,17 @@
+# Go
+bin/
+*.exe
+*.log
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+/data/
+
+# macOS
+.DS_Store
+
+# фронт (если появится)
+node_modules/
+dist/
