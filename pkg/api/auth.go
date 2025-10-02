@@ -14,8 +14,17 @@ import (
 	"time"
 )
 
-// b64 — кодек base64url без паддинга, как в классических JWT.
 var b64 = base64.RawURLEncoding
+
+const hexDigits = "0123456789abcdef"
+
+// password — кеш из переменной окружения. Пустая строка = аутентификация выключена.
+var password string
+
+// setPasswordFromEnv читает TODO_PASSWORD один раз (вызываем из api.Init()).
+func setPasswordFromEnv() {
+	password = os.Getenv("TODO_PASSWORD")
+}
 
 // jwtHeader — заголовок токена (тип и алгоритм).
 type jwtHeader struct {
@@ -34,12 +43,11 @@ type jwtPayload struct {
 // sha256Hex возвращает hex-строку от sha256(input).
 func sha256Hex(s string) string {
 	h := sha256.Sum256([]byte(s))
-	const hexdigits = "0123456789abcdef"
 	out := make([]byte, len(h)*2)
 	j := 0
 	for _, b := range h {
-		out[j] = hexdigits[b>>4]
-		out[j+1] = hexdigits[b&0x0f]
+		out[j] = hexDigits[b>>4]
+		out[j+1] = hexDigits[b&0x0f]
 		j += 2
 	}
 	return string(out)
@@ -106,13 +114,12 @@ func validateJWT(token, pass string) bool {
 // Если переменная окружения TODO_PASSWORD пуста, защита отключена.
 func auth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pass := os.Getenv("TODO_PASSWORD")
-		if pass == "" {
+		if password == "" { // пароль не задан — защита выключена
 			next(w, r)
 			return
 		}
 		c, err := r.Cookie("token")
-		if err != nil || !validateJWT(c.Value, pass) {
+		if err != nil || !validateJWT(c.Value, password) {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
 			return
 		}
@@ -124,25 +131,24 @@ func auth(next http.HandlerFunc) http.HandlerFunc {
 // Принимает JSON {"password": "..."} и возвращает {"token": "..."} при успехе.
 func signinHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		writeJSON(w, map[string]string{"error": "method not allowed"})
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	var in struct {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, map[string]string{"error": "json parse error"})
+		writeError(w, http.StatusBadRequest, "json parse error")
 		return
 	}
-	pass := os.Getenv("TODO_PASSWORD")
-	if pass == "" {
-		writeJSON(w, map[string]string{"error": "auth disabled"})
+	if password == "" {
+		writeError(w, http.StatusBadRequest, "auth disabled")
 		return
 	}
-	if in.Password != pass {
-		writeJSON(w, map[string]string{"error": "invalid password"})
+	if in.Password != password {
+		writeError(w, http.StatusUnauthorized, "invalid password")
 		return
 	}
-	tok, _ := makeJWT(pass)
+	tok, _ := makeJWT(password)
 	writeJSON(w, map[string]string{"token": tok})
 }

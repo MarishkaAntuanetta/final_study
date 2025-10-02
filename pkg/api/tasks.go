@@ -20,7 +20,7 @@ type tasksResp struct {
 // (подстрока в title/comment или дата 02.01.2006).
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeJSON(w, map[string]string{"error": "method not allowed"})
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
@@ -36,7 +36,7 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	items, err := db.Tasks(limit, search)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": "db select error"})
+		writeError(w, http.StatusInternalServerError, "db select error")
 		return
 	}
 

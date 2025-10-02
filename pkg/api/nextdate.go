@@ -68,8 +68,10 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 // nextDateHandler — GET /api/nextdate?now=20060102&date=20060102&repeat=...
 // Возвращает дату следующего выполнения (строкой) или текст "error".
 func nextDateHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 	nowStr := strings.TrimSpace(r.FormValue("now"))
 	dateStr := strings.TrimSpace(r.FormValue("date"))
 	repeat := strings.TrimSpace(r.FormValue("repeat"))
@@ -83,7 +85,7 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		now, err = time.Parse(dateFmt, nowStr)
 		if err != nil {
-			fmt.Fprintln(w, "bad now")
+			writeError(w, http.StatusBadRequest, "bad now")
 			return
 		}
 	}
